@@ -1,0 +1,17 @@
+[package]
+name = "socks-with-udp-over-ssh"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "udpsocks-server"
+path = "server/main.rs"
+
+[[bin]]
+name = "udpsocks-client"
+path = "client/src/main.rs"
+
+[dependencies]
+futures = "0.3.30"
+getopts = "0.2.21"
+tokio = { version = "1.36.0", features = [ "io-util", "net", "rt-multi-thread", "macros", "sync", "process", "io-std" ] }
