@@ -33,7 +33,7 @@ async fn main() {
                             let arcsocket2 = Arc::clone(&arcsocket);
                             socket_map.lock().await.insert(tup, arcsocket2);
                             tokio::spawn(async move {
-                                let mut buf = [0; 1555];
+                                let mut buf = [0; 1502];
                                 loop {
                                     let (bytes_read, _) = arcsocket.recv_from(&mut buf).await.unwrap();
                                     let b = u16::to_be_bytes(bytes_read as u16);
