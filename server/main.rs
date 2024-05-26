@@ -26,7 +26,7 @@ async fn main() {
                 }else{
                     match input2[0] {
                         0 => {
-                            let socket = UdpSocket::bind("127.0.0.1:0").await.unwrap();
+                            let socket = UdpSocket::bind((Ipv4Addr::UNSPECIFIED, 0)).await.unwrap();
                             socket.connect(SocketAddrV4::new(Ipv4Addr::new(tup.0, tup.1, tup.2, tup.3), u16::from_be_bytes([tup.4, tup.5]))).await.unwrap();
                             eprintln!("[server-info] UDP socket connected from {:?} to {:?}", socket.local_addr().unwrap(), tup);
                             let arcsocket = Arc::new(socket);
@@ -35,7 +35,7 @@ async fn main() {
                             tokio::spawn(async move {
                                 let mut buf = [0; 1502];
                                 loop {
-                                    let (bytes_read, _) = arcsocket.recv_from(&mut buf).await.unwrap();
+                                    let bytes_read = arcsocket.recv(&mut buf).await.unwrap();
                                     let b = u16::to_be_bytes(bytes_read as u16);
                                     stdout.write_all(&[tup.0, tup.1, tup.2, tup.3, tup.4, tup.5, b[0], b[1]]).await.unwrap();
                                     stdout.write_all(&buf[0..bytes_read]).await.unwrap();
