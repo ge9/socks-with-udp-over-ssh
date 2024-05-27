@@ -15,3 +15,5 @@ path = "client/src/main.rs"
 futures = "0.3.30"
 getopts = "0.2.21"
 tokio = { version = "1.36.0", features = [ "io-util", "net", "rt-multi-thread", "macros", "sync", "process", "io-std" ] }
+trust-dns-client = "0"
+trust-dns-proto = "0"

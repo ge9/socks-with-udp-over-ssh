@@ -19,3 +19,7 @@ UDP packets are translated and go through stdin/stdout.
       - You may need to use `socat TCP-LISTEN:2222,fork exec:"udpsocks-server",pipes` in Cygwin
     - ssh server side: `udpsocks-client 127.0.0.1:1080 -b 127.0.0.1 -l 2080 -c socat -c - -c "tcp-connect:127.0.0.1:3333"`
 - Note: Since only IPv4 is supported, `127.0.0.1` is recommended. `localhost` may not work.
+
+# fake DNS server
+
+The `udpsocks-server` provides a "fake" DNS server at `192.0.2.53:53`, one of special IPv4 addresses for documentation. Any UDP packets to the port are interpreted as DNS request and resolved by `udpsocks-server`. It uses the default domain resolver (like gethostbyname) but you can specify a DNS server explicitly in the argument of `udpsocks-server`. This feature may be useful independently of the main "over-TCP" feature (example commandline: `udpsocks-client 127.0.0.1:1080 -b 127.0.0.1 -l 2080 -c udpsocks-server -c 8.8.8.8:53`).

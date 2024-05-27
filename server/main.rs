@@ -5,13 +5,19 @@ use std::collections::HashMap;
 use std::net::{Ipv4Addr, SocketAddrV4};
 use std::sync::Arc;
 
+mod dns;
+use dns::handle_dns_query;
+
 #[tokio::main]
 async fn main() {
     let socket_map: Arc<Mutex<HashMap<(u8,u8,u8,u8,u8,u8), Arc<UdpSocket>>>> = Arc::new(Mutex::new(HashMap::new()));
     let mut stdin = tokio::io::stdin();
+    let upstream_dns = if let Some(x) = std::env::args().nth(1) {x.parse().ok()}else{None};
+    //use mutex to send packet data at once
+    let stdout_mutex0 = Arc::new(Mutex::new(tokio::io::stdout()));
     loop {
+        let stdout_mutex = Arc::clone(&stdout_mutex0);
         let mut input = [0; 8];
-        let mut stdout = tokio::io::stdout();
         if let Ok(n) = stdin.read_exact(&mut input).await {
             if n == 0 {break} //EOF
         } else {break;}
@@ -37,6 +43,7 @@ async fn main() {
                                 loop {
                                     let bytes_read = arcsocket.recv(&mut buf).await.unwrap();
                                     let b = u16::to_be_bytes(bytes_read as u16);
+                                    let mut stdout = stdout_mutex.lock().await;
                                     stdout.write_all(&[tup.0, tup.1, tup.2, tup.3, tup.4, tup.5, b[0], b[1]]).await.unwrap();
                                     stdout.write_all(&buf[0..bytes_read]).await.unwrap();
                                     stdout.flush().await.unwrap();
@@ -59,7 +66,15 @@ async fn main() {
             let length = u16::from_be_bytes([input[6], input[7]]);
             let mut data = vec![0; length as usize];
             stdin.read_exact(&mut data).await.expect("[server-error] failed to read data field");
-            if let Some(socket) = socket_map.lock().await.get(&tup) {
+            //fake DNS server at 192.0.2.53:53
+            if &data[..10] == &[0,0,0,1,192,0,2,53,0,53]{
+                let resp = handle_dns_query(&data[10..], upstream_dns).await.expect("[server-error] fake DNS request failed");
+                let b = u16::to_be_bytes((resp.len()+10) as u16);
+                let mut stdout = stdout_mutex.lock().await;
+                stdout.write_all(&[tup.0, tup.1, tup.2, tup.3, tup.4, tup.5, b[0], b[1], 0,0,0,1,192,0,2,53,0,53]).await.unwrap();
+                stdout.write_all(&resp).await.unwrap();
+                stdout.flush().await.unwrap();
+            }else if let Some(socket) = socket_map.lock().await.get(&tup) {
                 socket.send(&data).await.expect("[server-error] failed to send data");
             } else {
                 eprintln!("[server-warn] tried to send data to unknown destination {:?}", tup);
