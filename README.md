@@ -1,15 +1,11 @@
 # socks-with-udp-over-ssh
 
-Proxies a SOCKS5 proxy with UDP associate over ssh, making it available in the local machine. Currently, only IPv4 is supported.
-
-# How it works
-
-It intercepts UDP port notification from the SOCKS5 proxy and use UDP ports on local machine.
-UDP packets are translated and go through stdin/stdout.
+This software makes UDP-enabled SOCKS5 proxies available from behind TCP connections like SSH.  It works as a pair of client-side and server-side apps. It is especially useful when you want to make some applications connect networks through machines where you don't have root/admin privilege or right to manage network configurations. Currently, only IPv4 is supported.
 
 # Usage
 
 - Place a `udpsocks-server` binary on an SSH server and make sure it's callable from local machine by `my_command` (e.g. `ssh my_server sh -i -l -c udpsocks-server`).
+  - You actually don't need SSH but only TCP connections, but SSH may be required in most situations due to the lack of authentication in this software.
 - Set up SOCKS5 with UDP support on the SSH server, and use port forwaring to expose it to the local machine.
   - Example commandline: `ssh -NL 3080:127.0.0.1:1080 my_server`
 - Run `udpsocks-client` to host a SOCKS5 proxy on the local machine.
@@ -22,4 +18,20 @@ UDP packets are translated and go through stdin/stdout.
 
 # fake DNS server
 
-The `udpsocks-server` provides a "fake" DNS server at `192.0.2.53:53`, one of special IPv4 addresses for documentation. Any UDP packets to the port are interpreted as DNS request and resolved by `udpsocks-server`. It uses the default domain resolver (like gethostbyname) but you can specify a DNS server explicitly in the argument of `udpsocks-server`. This feature may be useful independently of the main "over-TCP" feature (example commandline: `udpsocks-client 127.0.0.1:1080 -b 127.0.0.1 -l 2080 -c udpsocks-server -c 8.8.8.8:53`).
+The `udpsocks-server` provides a "fake" DNS server at `192.0.2.53:53`, one of special IPv4 addresses for documentation. That is, any UDP packets to the port are interpreted as DNS request and resolved by `udpsocks-server`. It uses the default domain resolver (as `gethostbyname()` does) but you can specify a DNS server explicitly in the argument of `udpsocks-server`. This feature can be used independently of the main "over-ssh" feature (example commandline: `udpsocks-client 127.0.0.1:1080 -b 127.0.0.1 -l 2080 -c udpsocks-server -c 8.8.8.8:53`).
+
+# How it works
+
+The client-side app basically just relays packets between clients and the SOCKS5 proxy, but when it captures any UDP associate port notifications from the SOCKS5 proxy, it will assign a local UDP port and reply it instead. Also, it asks the server-side app through stdin/stdout to establish connections to the actual UDP port replied by the original SOCKS5 proxy, and sends UDP packets back and forth by encoding them into the byte stream. 
+
+# Socks5 servers with UDP associate
+
+- [Dante](https://www.inet.no/dante/index.html) (you need udp.connectdst=no for full-cone NAT)
+- [3proxy](https://3proxy.ru/)
+- https://github.com/haxii/socks5
+
+# Transparent proxy clients
+These softwares can force selected applications to send all TCP/UDP packets through SOCKS5 proxies.
+- [Proxifyre](https://github.com/wiresock/proxifyre) (Windows)
+- [redsocks](https://github.com/semigodking/redsocks) (*nix)
+- [hev-socks5-tproxy](https://github.com/heiher/hev-socks5-tproxy) (*nix)
