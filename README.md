@@ -5,9 +5,9 @@ This software makes UDP-enabled SOCKS5 proxies available from behind TCP connect
 # Usage
 
 - Place a `udpsocks-server` binary on an SSH server and make sure it's callable from local machine by `my_command` (e.g. `ssh my_server sh -i -l -c udpsocks-server`).
-  - You actually don't need SSH but only TCP connections, but SSH may be required in most situations due to the lack of authentication in this software.
-- Set up SOCKS5 with UDP support on the SSH server, and use port forwaring to expose it to the local machine.
-  - Example commandline: `ssh -NL 3080:127.0.0.1:1080 my_server`
+  - You actually don't need SSH but only TCP connections, but SSH may be required in most situations due to the lack of authentication system in this software.
+- Set up SOCKS5 with UDP support on the SSH server or another one that can be fully seen from the SSH server, and use port forwarding to expose it to the local machine.
+  - Example commandline: `ssh -NL 3080:1.1.1.1:1080 my_server`
 - Run `udpsocks-client` to host a SOCKS5 proxy on the local machine.
   - Example commandline: `udpsocks-client 127.0.0.1:3080 -b 127.0.0.1 -l 2080 -c ssh -c my_server -c sh -c '-i' -c '-l' -c '-c' -c udpsocks-server`
   - When SOCKS5 is running in ssh client side, use `socat` to convert stdin/stdout to TCP.
